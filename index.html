@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>آزمایش اتصال</title>
+<style>
+  body{font-family:Tahoma,system-ui,sans-serif;margin:0;padding:16px;background:#f6f2e8;color:#1b2b26;line-height:1.8}
+  h1{font-size:20px;margin:4px 0}
+  p{margin:6px 0 12px;color:#55655e;font-size:14px}
+  .r{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid #ddd;border-radius:12px;padding:8px 12px;margin:6px 0;font-size:14px}
+  .r b{flex:none;width:24px;height:24px;border-radius:50%;color:#fff;text-align:center;line-height:24px;background:#999}
+  .ok b{background:#2f7a55}.no b{background:#b04a42}
+  .r span{flex:1;direction:ltr;text-align:left;word-break:break-all}
+  .r i{flex:none;font-style:normal;color:#777;font-size:12px;direction:ltr}
+  button{font:inherit;padding:10px 16px;border-radius:10px;border:1px solid #3a6259;background:#3a6259;color:#fff;margin:6px 4px 6px 0}
+  pre{direction:ltr;text-align:left;white-space:pre-wrap;background:#fff;border:1px solid #ddd;border-radius:10px;padding:8px;font-size:12px}
+</style>
+</head>
+<body>
+<h1>آزمایش اتصال</h1>
+<p>این صفحه چند آدرس را امتحان می‌کند تا معلوم شود کدام‌ها روی این اینترنت باز می‌شوند. چند ثانیه صبر کنید (حداکثر ۱۵ ثانیه)، بعد عکس صفحه بگیرید یا «کپی نتیجه» را بزنید.</p>
+<div id="rows"></div>
+<button id="again" type="button">آزمایش دوباره</button><button id="copy" type="button">کپی نتیجه</button>
+<pre id="rep"></pre>
+<script>
+(function () {
+  var T = [
+    ['hamnavaa.com (سایت اصلی)', 'https://hamnavaa.com/robots.txt'],
+    ['www.hamnavaa.com', 'https://www.hamnavaa.com/robots.txt'],
+    ['hamnavaa-relay ... workers.dev', 'https://hamnavaa-relay.arieticlaude.workers.dev/health'],
+    ['green-note-7q2 ... workers.dev', 'https://green-note-7q2.arieticlaude.workers.dev/health'],
+    ['سرور داده supabase.co', 'https://bxrwcdonxeirhvpinwpz.supabase.co/auth/v1/health'],
+    ['github.com', 'https://github.com/'],
+    ['cloudflare.com', 'https://www.cloudflare.com/cdn-cgi/trace'],
+    ['1.1.1.1 (فقط آی‌پی، بدون نام)', 'https://1.1.1.1/'],
+    ['cdn.jsdelivr.net', 'https://cdn.jsdelivr.net/'],
+    ['example.com', 'https://example.com/'],
+    ['wikipedia.org', 'https://www.wikipedia.org/']
+  ];
+  var rows = document.getElementById('rows'), rep = document.getElementById('rep'), res = [];
+  function go() {
+    rows.innerHTML = ''; res = []; rep.textContent = '';
+    T.forEach(function (t) {
+      var d = document.createElement('div'); d.className = 'r'; d.innerHTML = '<b>…</b><span></span><i></i>';
+      d.querySelector('span').textContent = t[0]; rows.appendChild(d);
+      var t0 = Date.now(), done = false, ctl = (typeof AbortController === 'function') ? new AbortController() : null;
+      function fin(ok, note) {
+        if (done) return; done = true; d.className = 'r ' + (ok ? 'ok' : 'no'); d.firstChild.textContent = ok ? '✓' : '✕';
+        d.lastChild.textContent = (Date.now() - t0) + ' ms' + (note ? ' ' + note : ''); res.push((ok ? 'OK   ' : 'FAIL ') + t[1] + ' ' + (Date.now() - t0) + 'ms ' + (note || '')); show();
+      }
+      setTimeout(function () { if (ctl) ctl.abort(); fin(false, 'timeout'); }, 15000);
+      try { fetch(t[1], { mode: 'no-cors', cache: 'no-store', signal: ctl ? ctl.signal : undefined }).then(function () { fin(true, ''); }, function (e) { fin(false, String(e && e.name || 'error')); }); } catch (e) { fin(false, 'exception'); }
+    });
+  }
+  function show() { rep.textContent = 'net-check ' + new Date().toISOString() + '\n' + navigator.userAgent + '\n' + res.join('\n'); }
+  document.getElementById('again').onclick = go;
+  document.getElementById('copy').onclick = function () { var b = this; if (navigator.clipboard) navigator.clipboard.writeText(rep.textContent).then(function () { b.textContent = 'کپی شد'; }); };
+  go();
+})();
+</script>
+</body>
+</html>
