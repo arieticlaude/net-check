@@ -23,7 +23,7 @@
 <p>این صفحه چند آدرس را امتحان می‌کند تا معلوم شود کدام‌ها روی این اینترنت باز می‌شوند. چند ثانیه صبر کنید (حداکثر ۱۵ ثانیه)، بعد عکس صفحه بگیرید یا «کپی نتیجه» را بزنید.</p>
 <div id="rows"></div>
 <button id="again" type="button">آزمایش دوباره</button><button id="copy" type="button">کپی نتیجه</button>
-<pre id="rep"></pre>
+<h1 style="margin-top:18px">آزمایش حجم (دانلود فایل‌های بزرگ‌تر)</h1><p>اگر ردیفی گیر کند، می‌نویسد تا چند کیلوبایت رسیده بود.</p><div id="rows2"></div><pre id="rep"></pre>
 <script>
 (function () {
   var T = [
@@ -55,9 +55,37 @@
     });
   }
   function show() { rep.textContent = 'net-check ' + new Date().toISOString() + '\n' + navigator.userAgent + '\n' + res.join('\n'); }
-  document.getElementById('again').onclick = go;
+
+  var L = [
+    ['همین سایت (github.io) ۱۰ کیلوبایت', 'blob-10k.bin', 10],
+    ['همین سایت (github.io) ۱۰۰ کیلوبایت', 'blob-100k.bin', 100],
+    ['همین سایت (github.io) ۴۰۰ کیلوبایت', 'blob-400k.bin', 400],
+    ['hamnavaa.com کتابخانهٔ ورود ۳۰۰KB', 'https://www.hamnavaa.com/assets/js/vendor/supabase.compat.js', 300],
+    ['hamnavaa.com پنل ۱۵۰KB', 'https://www.hamnavaa.com/panel/panel.js', 150],
+    ['workers.dev پنل CSS ۴۳KB', 'https://green-note-7q2.arieticlaude.workers.dev/panel/panel.css', 43],
+    ['workers.dev پنل JS ۱۵۰KB', 'https://green-note-7q2.arieticlaude.workers.dev/panel/panel.js', 150],
+    ['workers.dev کتابخانه ۳۰۰KB', 'https://green-note-7q2.arieticlaude.workers.dev/assets/js/vendor/supabase.compat.js', 300]
+  ];
+  var rows2 = document.getElementById('rows2');
+  function ladder() {
+    rows2.innerHTML = '';
+    L.forEach(function (t) {
+      var d = document.createElement('div'); d.className = 'r'; d.innerHTML = '<b>…</b><span></span><i></i>';
+      d.querySelector('span').textContent = t[0]; rows2.appendChild(d);
+      var t0 = Date.now(), got = 0, done = false, ctl = (typeof AbortController === 'function') ? new AbortController() : null;
+      function fin(ok, note) { if (done) return; done = true; var ms = Date.now() - t0; d.className = 'r ' + (ok ? 'ok' : 'no'); d.firstChild.textContent = ok ? '✓' : '✕';
+        d.lastChild.textContent = Math.round(got / 1024) + 'KB ' + ms + 'ms ' + (note || ''); res.push((ok ? 'OK   ' : 'FAIL ') + t[1] + ' ' + Math.round(got / 1024) + 'KB of ~' + t[2] + 'KB in ' + ms + 'ms ' + (note || '')); show(); }
+      var timer = setTimeout(function () { if (ctl) ctl.abort(); fin(false, 'STALLED'); }, 20000);
+      fetch(t[1] + (t[1].indexOf('?') < 0 ? '?x=' + Date.now() : ''), { cache: 'no-store', signal: ctl ? ctl.signal : undefined }).then(function (r) {
+        var rd = r.body && r.body.getReader ? r.body.getReader() : null;
+        if (!rd) return r.arrayBuffer().then(function (b) { got = b.byteLength; clearTimeout(timer); fin(true, 'http' + r.status); });
+        (function pump() { return rd.read().then(function (x) { if (x.done) { clearTimeout(timer); fin(true, 'http' + r.status); return; } got += x.value.length; return pump(); }); })().catch(function (e) { clearTimeout(timer); fin(false, String(e && e.name)); });
+      }, function (e) { clearTimeout(timer); fin(false, String(e && e.name || 'error')); });
+    });
+  }
+  document.getElementById('again').onclick = function () { go(); ladder(); };
   document.getElementById('copy').onclick = function () { var b = this; if (navigator.clipboard) navigator.clipboard.writeText(rep.textContent).then(function () { b.textContent = 'کپی شد'; }); };
-  go();
+  go(); ladder();
 })();
 </script>
 </body>
